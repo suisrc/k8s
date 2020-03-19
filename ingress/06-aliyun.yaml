@@ -1,0 +1,46 @@
+# 该配置文件阿里云专用
+#
+# 在集群入口，发现一个有意思的存在，即使我使用externalTrafficPolicy: Local，
+# 在负载均衡的openrestry中也无法获取用户的真实IP（为127.0.0.1），但是我们可以
+# 通过增加use-proxy-protocol: 'true'，可以修正这个问题，但是带来的负面影响是
+# 由于增加了proxy协议解析，导致80端口无法使用，所以只好这里进行修正
+# 所以我修改了http端口为http1， 该端口接受http协议，并且转发为带有proxy协议的http
+# 到本地的http端口上。
+#
+#
+# https://help.aliyun.com/document_detail/86397.html
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-lb
+  namespace: ingress-nginx
+  annotations:
+    service.beta.kubernetes.io/alicloud-loadbalancer-address-type: intranet
+    # 特别注意，这里使用的阿里云的负载均衡
+    # service.beta.kubernetes.io/alicloud-loadbalancer-id: lb-xxx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+  ports:
+    - name: http1
+      port: 81
+      targetPort: http
+      protocol: TCP
+      nodePort: 30081
+    - name: http
+      port: 80
+      targetPort: http1
+      protocol: TCP
+      nodePort: 30080
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+      nodePort: 30442
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
