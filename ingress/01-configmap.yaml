@@ -1,0 +1,81 @@
+# kubectl apply -f 01-configmap.yaml
+# https://github.com/kubernetes/ingress-nginx/blob/master/internal/ingress/controller/config/config.go
+# https://github.com/kubernetes/ingress-nginx/blob/master/rootfs/etc/nginx/template/nginx.tmpl
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+data:
+  worker-processes: '2'
+  use-proxy-protocol: 'true'
+  enable-syslog: 'true'
+  syslog-host: rsyslog-nginx-svc.logs-k8s3.svc
+  syslog-port: '5140'
+  max-worker-connections: '65536'
+  proxy-body-size: 20m
+  proxy-connect-timeout: '10'
+  server-tokens: 'false'
+  ssl-redirect: 'false'
+  use-geoip: 'false'
+  use-geoip2: 'true'
+  worker-cpu-affinity: auto
+  allow-backend-server-header: 'true'
+  #compute-full-forwarded-for: 'true'
+  use-forwarded-headers: 'true'
+  #forwarded-for-header: X-Forwarded-For
+  enable-underscores-in-headers: 'true'
+  generate-request-id: 'true'
+  ignore-invalid-headers: 'true'
+  #proxy-stream-timeout: 75s
+  log-format-escape-json: 'true'
+  log-format-upstream:
+    '{"@timestamp":"$time_iso8601",
+    "remote_addr":"$remote_addr",
+    "xff":"$http_x_forwarded_for",
+    "user_agent":"$http_user_agent",
+    "session_id":"$cookie_o_account",
+    "referer":"$http_referer",
+    "scheme":"$scheme",
+    "domain":"$host",
+    "uri":"$uri",
+    "request_uri":"$request_uri",
+    "request_method":"$request_method",
+    "request_length":"$request_length",
+    "request_time":"$request_time",
+    "req_id":"$req_id",
+    "upstream_addr":"$upstream_addr",
+    "upstream_time":"$upstream_response_time",
+    "status":"$status",
+    "size":"$body_bytes_sent",
+    "geoip":{
+      "ip":"$remote_addr",
+      "country_code":"$geoip2_city_country_code",
+      "country_name":"$geoip2_city_country_name",
+      "region_code":"$geoip2_region_code",
+      "region_name":"$geoip2_region_name",
+      "city_name":"$geoip2_city",
+      "location":{
+        "lat":"$geoip2_latitude",
+        "lon":"$geoip2_longitude",
+      }
+    },
+    "ingress":"$hostname",
+    "namespace":"$namespace",
+    "ingress_name":"$ingress_name",
+    "service_name":"$service_name"}'
+
+#---
+# 在集群入口，发现了一个有意思的存在，即使我使用externalTrafficPolicy: Local，
+# 在负载均衡的openrestry中也无法获取用户的真实IP（为127.0.0.1），但是我们可以
+# 通过增加use-proxy-protocol: 'true'，可以修正这个问题，但是带来的负面影响是
+# 由于增加了proxy协议解析，导致80端口无法使用（奇怪的是443端口正常），所以只好
+# 这里进行修正增加以下内容， 通过TCP强制增加代理协议，以便于后端可以正常解析
+# 比较申请的是，ingress-nginx开发者似乎预见了这个问题的存在，所以预留的扩展方式
+# https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
+# 但是经过测试和阅读lua代码了解到这种代理仅限于代理服务，无法完成负载均衡的自身内容
+# 处理， 同时在配置[PROXY]时候，80端口即使是TCP协议，也无法正确使用proxy-protocol
+# 所以该部分内容已经迁移到lifecycle.postStart中修改nginx.tmpl文件用于解决该问题。
