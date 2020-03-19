@@ -1,0 +1,98 @@
+# 部署编辑器，用于远程控制辅助管理工具
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coder-conf
+data:
+  PASSWORD: x123456
+  GIT_USER_NAME: xxxxx
+  GIT_USER_EMAIL: xxxxx@suisrc.cn
+  #GIT_REPO_URLS: 
+  TZ: Asia/Shanghai
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    namespace: default
+    name: coder
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder-svc
+spec:
+  ports:
+  - name: http
+    port: 7000
+  selector:
+    app: coder-app
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: coder-app
+  name: coder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coder-app
+  template:
+    metadata:
+      labels:
+        app: coder-app
+    spec:
+      imagePullSecrets:
+        - name: docker-registry
+      nodeSelector:
+        k8s3-ingress: worker
+      serviceAccountName: coder
+      containers:
+        - image: acr.resx.cc/suisrc/code-server:v1.41.1-centos7-k8s
+          name: coder
+          envFrom:
+            - configMapRef:
+                name: coder-conf
+          ports:
+            - containerPort: 7000
+              protocol: TCP
+              name: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /home/project
+              name: volume-project
+              subPath: k8s3
+            - mountPath: /etc/localtime
+              name: volume-localtime
+      volumes:
+        - name:  volume-project
+          persistentVolumeClaim:
+            claimName: k8s3-server-pvc-coder
+          #hostPath:
+          #  path: /var/lib/docker/k8s1/console/data
+          #  type: 'DirectoryOrCreate'
+        - hostPath:
+            path: /etc/localtime
+            type: ''
+          name: volume-localtime
