@@ -240,12 +240,12 @@ spec:
           emptyDir: {}
       serviceAccountName: kubernetes-dashboard
       #nodeSelector:
-        #"beta.kubernetes.io/os": linux
-        #"k8s3-type": worker
+      #  "beta.kubernetes.io/os": linux
+      #  "k8s3-type": worker
       # Comment the following tolerations if Dashboard must not be deployed on master
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
+      #tolerations:
+      #  - key: node-role.kubernetes.io/master
+      #    effect: NoSchedule
 
 ---
 
@@ -308,12 +308,12 @@ spec:
             runAsGroup: 2001
       serviceAccountName: kubernetes-dashboard
       #nodeSelector:
-        #"beta.kubernetes.io/os": linux
-        #"k8s3-type": worker
+      #  "beta.kubernetes.io/os": linux
+      #  "k8s3-type": worker
       # Comment the following tolerations if Dashboard must not be deployed on master
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
+      #tolerations:
+      #  - key: node-role.kubernetes.io/master
+      #    effect: NoSchedule
       volumes:
         - name: tmp-volume
           emptyDir: {}
