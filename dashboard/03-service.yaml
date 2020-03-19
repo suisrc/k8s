@@ -1,0 +1,38 @@
+# 内网使用
+#apiVersion: extensions/v1beta1
+#kind: Ingress
+#metadata:
+#  name: dashboard-l2-irs
+#  namespace: kubernetes-dashboard
+#  annotations:
+#    kubernetes.io/ingress.class: traefik
+#    traefik.ingress.kubernetes.io/pass-tls-cert: "true"
+#    #traefik.ingress.kubernetes.io/redirect-entry-point: https
+#    #ingress.kubernetes.io/protocol: 'https'
+#spec:
+#  rules:
+#    - host: dhd.192-168-9-51.nip.io
+#      http:
+#        paths:
+#        - backend:
+#            serviceName: kubernetes-dashboard
+#            servicePort: 443
+#  tls:
+#    - hosts:
+#        - dhd.192-168-9-51.nip.io
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  type: NodePort
+  ports:
+    - port: 443
+      targetPort: 8443
+      nodePort: 30000
+  selector:
+    k8s-app: kubernetes-dashboard
