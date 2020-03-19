@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  name: coder-l2-irs
+spec:
+  rules:
+    - host: coder.192-168-9-51.nip.io
+      http:
+        paths:
+          - backend:
+              serviceName: coder-svc
+              servicePort: http
+            path: /
+  tls:
+    - hosts:
+        - coder.192-168-9-51.nip.io
