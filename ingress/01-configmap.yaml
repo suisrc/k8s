@@ -12,7 +12,7 @@ metadata:
 data:
   worker-processes: '2'
   use-proxy-protocol: 'true'
-  enable-syslog: 'true'
+  enable-syslog: 'false'
   syslog-host: rsyslog-nginx-svc.logs-k8s3.svc
   syslog-port: '5140'
   max-worker-connections: '65536'
