@@ -7,7 +7,7 @@ metadata:
   name: coder-l2-irs
 spec:
   rules:
-    - host: coder.192-168-9-51.nip.io
+    - host: csr.192-168-9-51.nip.io
       http:
         paths:
           - backend:
@@ -16,4 +16,4 @@ spec:
             path: /
   tls:
     - hosts:
-        - coder.192-168-9-51.nip.io
+        - csr.192-168-9-51.nip.io
